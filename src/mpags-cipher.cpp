@@ -1,9 +1,8 @@
-#include "CaesarCipher.hpp"
 #include "CipherMode.hpp"
 #include "CipherType.hpp"
-#include "PlayfairCipher.hpp"
 #include "ProcessCommandLine.hpp"
 #include "TransformChar.hpp"
+#include "CipherFactory.hpp"
 
 #include <cctype>
 #include <fstream>
@@ -44,7 +43,7 @@ int main(int argc, char* argv[])
             << "                   Stdout will be used if not supplied\n\n"
             << "                   Stdout will be used if not supplied\n\n"
             << "  -c CIPHER        Specify the cipher to be used to perform the encryption/decryption\n"
-            << "                   CIPHER can be caesar or playfair - caesar is the default\n\n"
+            << "                   CIPHER can be caesar, vigenere or playfair - caesar is the default\n\n"
             << "  -k KEY           Specify the cipher KEY\n"
             << "                   A null key, i.e. no encryption, is used if not supplied\n\n"
             << "  --encrypt        Will use the cipher to encrypt the input text (default behaviour)\n\n"
@@ -90,21 +89,13 @@ int main(int argc, char* argv[])
         }
     }
 
-    std::string outputText;
+    auto cipher = cipherFactory(settings.cipherType ,settings.cipherKey );
 
-    switch (settings.cipherType) {
-        case CipherType::Caesar: {
-            // Run the Caesar cipher (using the specified key and encrypt/decrypt flag) on the input text
-            CaesarCipher cipher{settings.cipherKey};
-            outputText = cipher.applyCipher(inputText, settings.cipherMode);
-            break;
-        }
-        case CipherType::Playfair: {
-            PlayfairCipher cipher{settings.cipherKey};
-            outputText = cipher.applyCipher(inputText, settings.cipherMode);
-            break;
-        }
+    if (!cipher){
+        std::cerr << "Warning cipher not loaded" << std::endl; 
+        return 1;
     }
+    std::string outputText{cipher->applyCipher(inputText, settings.cipherMode)};
 
     // Output the encrypted/decrypted text to stdout/file
     if (!settings.outputFile.empty()) {
